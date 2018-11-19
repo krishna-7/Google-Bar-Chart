@@ -1,0 +1,119 @@
+<html>
+  <head>
+    <!--Load the AJAX API-->
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript" src="js/jquery3.3.1.js"></script>
+  </head>
+
+  <body onload="getData();">
+    <!--Div that will hold the pie chart-->
+    <div id="chart_div">
+        <label><strong>Choose X Axis Parameter : </strong></label>
+        <div id="xParam"> 
+        <!-- Place holder for dynamically generated x-axis radio buttons  -->
+        </div>
+        <label><strong>Choose Y Axis Parameter : </strong></label>
+        <div id="yParam">
+        <!-- Place holder for dynamically generated y-axis radio buttons  -->
+        </div>
+        <div id="SubmitGraph">
+          <input type="button" name="createGraph" onclick="drawChart()" value="Create Graph" >
+        </div>
+    </div>
+    <label style="font-size: 12px"><strong>* Y-axis cannot contain String Data Types </strong></label>
+    </div>
+    <script type="text/javascript">
+      var xValues = [];
+      var chartVal=[[]];
+      var xSel="";
+      var ySel="";
+      var type=[];
+      var i=0;
+      function getData(){
+        $.ajax({
+          url: "data.json",
+          dataType: "json",
+          success: function (jsonData) {
+            $.each(jsonData, function( index, value ) {
+              if(index==0){
+                $.each(value, function( index1, value1 ) {
+                  xValues.push([index1,typeof value1]);
+                  //to check the type of value eing compiled across we use the following 2 lines code
+                  //uncomment the alert box line if u want to check the data type in each json class
+                  type[i]=typeof value1;
+                  /*alert(type[i]);*/
+                  i++;
+                });
+                setXVal();
+              }
+              $.each(value, function( index1, value1 ) {
+                if( typeof chartVal[index] == 'undefined' ) {
+                  chartVal[index]=[];
+                }
+                chartVal[index][index1]=value1;
+              });
+            });
+          }
+        });
+      }
+
+      function setXVal(){
+        var setStrx="";
+        var setStry="";
+        $.each(xValues, function( index, value ) {
+          setStrx+="<label><input type='radio' name='x-axis' value='"+value[0]+"' id='x-"+value[0]+"'>"+value[0]+"</label>";
+          if(value[1]=="number")
+            setStry+="<label><input type='radio' name='y-axis' value='"+value[0]+"' id='y-"+value[0]+"'>"+value[0]+"</label>";
+        });
+        $("#xParam" ).html(setStrx);
+        $("#yParam" ).html(setStry);
+      }
+
+      // From here on Google Chart functions are being used
+      // Load the Visualization API and the corechart package.
+      google.charts.load('current', {'packages':['corechart']});
+
+      // Set a callback to run when the Google Visualization API is loaded.
+      google.charts.setOnLoadCallback(drawChart);
+
+      // Callback that creates and populates a data table,
+      // instantiates the pie chart, passes in the data and
+      // draws it.
+      function drawChart() {
+        var xVal = document.getElementsByName("x-axis");
+        var yVal = document.getElementsByName("y-axis");
+        $.each(xVal, function( index1, value ) {
+          if (document.getElementById(value.id).checked) {
+            xSel=value.value;
+          }
+        });
+
+        $.each(yVal, function( index1, value ) {
+          if (document.getElementById(value.id).checked) {
+            ySel=value.value;
+          }
+        });
+        // Create the data table.
+        var data = new google.visualization.DataTable();
+
+        $.each(chartVal, function( index1, value ) {
+          //Index == 0 is being checked to make sure that Column entry is made only once.
+          if(index1==0){  
+              data.addColumn(typeof (value[xSel]), xSel);
+              data.addColumn(typeof (value[ySel]), ySel);
+            }
+            data.addRow([value[xSel], value[ySel]]);
+        });
+        
+        // Set chart options
+        var options = {'title':xSel+" v/s " +ySel,
+                       'width':600,
+                       'height':500};
+
+        // Instantiate and draw our chart, passing in some options.
+        var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
+        chart.draw(data, options);
+      }
+    </script>
+  </body>
+</html>
